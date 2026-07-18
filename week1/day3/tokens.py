@@ -26,9 +26,10 @@ for prompt in prompts:
                 "role": "user",
                 "content": prompt
             }
-        ]
+        ],
+        max_tokens = 2000
     )
 
     print(f"\nPrompt: {prompt}")
     # print(response.choices[0].message.content)
-    print(f"Input: {response.usage.prompt_tokens} | Output: {response.usage.completion_tokens} | Total: {response.usage.total_tokens}")
+    print(f"Input: {response.usage.prompt_tokens} | Output: {response.usage.completion_tokens} | Total: {response.usage.total_tokens} Finish reason: {response.choices[0].finish_reason}")
