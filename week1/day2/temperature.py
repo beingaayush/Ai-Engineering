@@ -15,20 +15,17 @@ client = Groq(api_key=my_api_key)
 # Model
 model = "llama-3.3-70b-versatile"
 
-system_prompt = "you're a brand manager, who'll sugeests name for my food company brand, the brand name should be of one word, suggest only one name"
-user_prompt = "suggest a brand name for my food company"
-
 
 # System Message
 system_message = {
     "role": "system",
-    "content": system_prompt
+    "content": "you're a brand manager, who'll sugeests name for my food company brand, the brand name should be of one word, suggest only one name"
 }
 
 # User Message
 user_message = {
     "role": "user",
-    "content": user_prompt
+    "content": "suggest a brand name for my food company"
 }
 
 
