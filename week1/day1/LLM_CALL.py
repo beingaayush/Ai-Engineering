@@ -23,7 +23,7 @@ messages=[message]
 
 response=client.chat.completions.create(
     model=model,
-    message=messages
+    messages=messages
 )
 
 print(response.choices[0].message.content)
