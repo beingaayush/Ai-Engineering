@@ -11,7 +11,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 model = "llama-3.3-70b-versatile"
 
 # User Query
-user_query = "What is 568 × 934?"
+user_query = "i wan to purchase an iphone 17, i have 1.5 lacs rupees, after purchasing that item how much money i've left with?"
 
 # ReAct Prompt
 prompt = f"""
@@ -51,3 +51,24 @@ response = client.chat.completions.create(
 )
 
 print(response.choices[0].message.content)
+
+
+
+# NOTE:-
+# This is not a real AI Agent.
+# we're only prompting the LLM to pretend it is using tools.
+# A real ReAct agent works like this:
+
+#                User
+#                 ↓
+#                LLM
+#                 ↓
+#              Chooses Tool
+#                 ↓
+#       Python/Web Search/Database/API
+#                 ↓
+#            Gets Real Output
+#                 ↓
+#                LLM
+#                 ↓
+#             Final Answer
