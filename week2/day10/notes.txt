@@ -1,0 +1,82 @@
+Ye line samajh lo (Important)
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1)
+)
+
+@retry → Is function ko automatically retry karna.
+stop_after_attempt(3) → Maximum 3 baar try karega.
+wait_exponential(multiplier=1) → Delay: 1s → 2s → 4s.
+----------------------------------------------------------------------------------------------------------------
+
+Jab @retry kisi function ke upar lagta hai, to:
+Agar function ke andar koi exception raise hoti hai, to Tenacity us function ko retry kar deta hai.
+
+Tumhare code me:
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1)
+)
+def ask_llm():
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    return response
+
+Agar ye line: response = client.chat.completions.create(...)
+koi exception throw kare, jaise:
+
+> Timeout
+> Connection Error
+> Rate Limit
+> Server Error
+
+to ask_llm() dubara call hoga.
+
+Internally kuch aisa hota hai:
+try:
+    ask_llm()
+except Exception:
+    # Retry
+
+Phir fir se:
+
+try:
+    ask_llm()
+except Exception:
+    # Retry
+
+Aur maximum 3 attempts tak.
+----------------------------------------------------------------------------------------------------------------
+
+Agar tum specify karna chaho ki sirf kuch exceptions par hi retry ho?
+Tab retry_if_exception_type() use karte hain.
+
+Example:
+
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type
+)
+
+@retry(
+    retry=retry_if_exception_type(ConnectionError),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential()
+)
+def ask_llm():
+    ...
+
+Ab sirf ConnectionError aayega tabhi retry hoga.
+----------------------------------------------------------------------------------------------------------------
+
