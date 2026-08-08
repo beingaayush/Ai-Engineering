@@ -1,0 +1,29 @@
+Limitation in this RAG version:- 
+qn me hai "old" not "age"
+age aur old same meaning toh hai. RAG ko samajhna chahiye na?
+Yes — proper RAG mein exactly ye hona chahiye. Lekin current retrieval RAG ka semantic retrieval nahi hai.
+
+current retrieval basically:
+Question
+   ↓
+"age" word hai in the knowledge base?
+   ↓
+YES → age document
+NO  → None
+
+
+
+Now Actual RAG:
+Question
+   ↓
+Embedding banao
+   ↓
+Question ka meaning/vector
+   ↓
+Knowledge-base documents ke vectors se similarity
+   ↓
+Most relevant document
+   ↓
+LLM
+   ↓
+Answer
