@@ -27,3 +27,33 @@ Most relevant document
 LLM
    ↓
 Answer
+
+
+
+
+
+             RAG PIPELINE
+
+Documents
+    ↓
+Document Loading
+    ↓
+Chunking
+    ↓
+Embeddings
+    ↓
+Vector Database
+    ↓
+        ← User Question
+              ↓
+         Query Embedding
+              ↓
+         Similarity Search
+              ↓
+        Relevant Chunks
+              ↓
+       Context + Question
+              ↓
+             LLM
+              ↓
+            Answer
