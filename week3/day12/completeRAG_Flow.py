@@ -176,7 +176,8 @@ response = client.chat.completions.create(
             "content": prompt
         }
     ],
-    temperature=0
+    temperature=0,
+    streaming = True
 )
 
 
