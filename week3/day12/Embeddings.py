@@ -33,12 +33,14 @@ similarities = np.dot(
 
 
 # Display results
-for document, score in zip(documents, similarities):
-    print(f"{score:.4f} → {document}")
+# zip() = document aur uska score ko pair karo
+# :.2f ka matlab decimal ke baad 2 digits
+for document, score in zip(documents, similarities):    
+    print(f"{score:.2f} → {document}")
 
 
 # Find most similar document
-best_index = np.argmax(similarities)
+best_index = np.argmax(similarities)    # argmax = sabse badi value kis INDEX par hai?
 
 print("\nMost Relevant Document:")
 print(documents[best_index])
