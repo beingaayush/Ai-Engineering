@@ -1,0 +1,114 @@
+knowledge.txt
+      ↓
+Documents
+      ↓
+Embeddings
+      ↓
+Qdrant Vector Database
+      ↓
+User Query
+      ↓
+Query Embedding
+      ↓
+Qdrant Similarity Search
+      ↓
+Relevant Context
+      ↓
+Prompt
+      ↓
+Groq LLM
+      ↓
+Final Answer
+
+
+1. knowledge.txt = hamara private/company knowledge base.
+
+2. SentenceTransformer("all-MiniLM-L6-v2") text ko 384-dimensional numerical vectors (embeddings) me convert karta hai. Embeddings ka purpose text ke semantic meaning ko numbers ke form me represent karna hai.
+
+3. Qdrant ek Vector Database hai. Hum documents ke embeddings Qdrant me store karte hain taaki baad me user ke question ke saath similarity search kar sakein.
+
+4. Qdrant me har document ko ek Point ke form me store karte hain:
+   - id = unique ID
+   - vector = document ka embedding
+   - payload = original document/text
+
+   Example:
+   Point
+   ├── id: 0
+   ├── vector: [384 numbers]
+   └── payload:
+         text: "Employees receive Rs 3000 per month for gym reimbursement."
+
+5. `zip(documents, embeddings)` document ko uske corresponding embedding ke saath pair karta hai.
+   `enumerate()` hume index/id deta hai.
+   `points.append(point)` har Qdrant point ko list me add karta hai.
+
+6. `client.upsert(...)` saare points ko Qdrant collection me store karta hai.
+
+7. User question `input()` se liya jata hai. Question ko bhi SAME embedding model se vector me convert karte hain:
+   
+   User Question → Embedding → 384-dimensional vector
+
+8. `client.query_points(...)` Qdrant me similarity search karta hai. Ye query vector ke closest/relevant stored vectors find karta hai. `limit=3` ka matlab top 3 relevant results.
+
+9. Qdrant ke search results me original text payload ke andar hota hai. Isliye:
+   
+   `result.payload["text"]`
+   
+   se relevant original text nikalte hain.
+
+10. Multiple retrieved texts ko combine karke `context` banate hain:
+   
+   Search Results → Original Text → Context
+
+11. Prompt me `context` + user ka question diya jata hai. LLM ko instruction dete hain ki answer ONLY provided context ke basis par dena hai. Agar context me answer nahi hai, to "I don't have enough information to answer that." bolna hai.
+
+12. Groq API actual LLM ko call karti hai. Yaha Retrieval ke baad Generation hoti hai:
+   
+   Context + Question → Prompt → Groq LLM → Final Answer
+
+13. `temperature=0` use kiya hai taaki company-policy type answers unnecessarily creative/random na ho.
+
+IMPORTANT CONCEPT:
+
+RAG ke 2 major parts hain:
+
+RETRIEVAL:
+User Query → Embedding → Qdrant Search → Relevant Documents → Context
+
+GENERATION:
+Context + User Query → Prompt → Groq LLM → Final Answer
+
+Complete RAG flow:
+
+Documents → Embeddings → Qdrant → Retrieve → Context → Prompt → Groq → Answer
+
+Is code me Qdrant ka kaam ANSWER banana nahi hai. Qdrant sirf relevant information RETRIEVE karta hai. Groq/LLM retrieved information ko use karke FINAL ANSWER generate karta hai.
+
+KEY SYNTAX JO CONCEPTUALLY YAAD RAKHNI HAI:
+
+`model.encode(text)` → text ko embedding me convert karta hai.
+
+`PointStruct(...)` → Qdrant ke liye ek point banata hai.
+
+`payload={"text": document}` → original text ko point ke saath store karta hai.
+
+`client.upsert(...)` → points ko Qdrant me store karta hai.
+
+`client.query_points(...)` → Qdrant me similarity search karta hai.
+
+`result.payload["text"]` → retrieved result ka original text nikalta hai.
+
+`groq_client.chat.completions.create(...)` → Groq LLM ko call karta hai.
+
+`response.choices[0].message.content` → LLM ka final answer nikalta hai.
+
+MENTAL MODEL:
+
+Qdrant = "Relevant information dhoondho."
+
+Groq = "Us information ke basis par answer banao."
+
+RAG = "Pehle dhoondho, phir LLM se answer banwao."
+
+:::
