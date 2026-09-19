@@ -1,0 +1,748 @@
+RAG CODE — COMPLETE SIMPLE EXPLANATION
+
+PURPOSE:
+Ye code ek simple RAG system bana raha hai.
+
+RAG ka flow:
+Knowledge → Embedding → Qdrant → Search → Context → LLM → Answer
+
+
+1. IMPORTS + API KEYS
+---------------------
+
+import os
+from dotenv import load_dotenv
+from qdrant_client import QdrantClient
+from sentence_transformers import SentenceTransformer
+from groq import Groq
+
+load_dotenv()
+
+QDRANT_URL = os.getenv("QDRANT_URL")
+QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+Meaning:
+
+.env file se API keys/address read kar rahe hain.
+
+QDRANT_URL       = Qdrant Cloud ka address
+QDRANT_API_KEY   = Qdrant ka password/key
+GROQ_API_KEY     = Groq API key
+
+
+2. QDRANT SE CONNECT
+--------------------
+
+client = QdrantClient(
+    url=QDRANT_URL,
+    api_key=QDRANT_API_KEY
+)
+
+Meaning:
+
+Python ko Qdrant Cloud se connect kar diya.
+
+"client" = Qdrant se baat karne ka connection.
+
+
+3. QDRANT COLLECTION BANANA
+---------------------------
+
+COLLECTION_NAME = "knowledge_filter"
+EMBEDDING_SIZE = 384
+
+Collection ko ek folder/database samjho.
+
+Qdrant ke andar:
+
+knowledge_filter
+    ↓
+documents/vectors
+
+
+EMBEDDING_SIZE = 384
+
+Matlab har text ko embedding model 384 numbers mein convert karega.
+
+Example:
+
+"You get 20 vacation days."
+        ↓
+[0.12, -0.45, 0.77, ... 384 numbers]
+
+
+4. PURANA COLLECTION DELETE
+---------------------------
+
+if client.collection_exists(COLLECTION_NAME):
+    client.delete_collection(COLLECTION_NAME)
+
+Agar collection pehle se exist karta hai,
+to delete kar do.
+
+Reason:
+Fresh data se dobara start karna.
+
+
+5. NAYA COLLECTION CREATE
+-------------------------
+
+client.create_collection(
+    collection_name=COLLECTION_NAME,
+    vectors_config=VectorParams(
+        size=384,
+        distance=Distance.COSINE,
+    ),
+)
+
+Meaning:
+
+Qdrant mein ek collection banao.
+
+size=384
+→ vectors mein 384 numbers honge.
+
+distance=Distance.COSINE
+→ vectors ki similarity calculate karne ke liye cosine similarity use hogi.
+
+Simple meaning:
+
+"Kaunsa document mere question ke meaning ke sabse close hai?"
+
+
+6. CATEGORY KE LIYE INDEX
+-------------------------
+
+client.create_payload_index(
+    collection_name=COLLECTION_NAME,
+    field_name="category",
+    field_schema=PayloadSchemaType.KEYWORD,
+)
+
+Documents mein category hai:
+
+{
+    "text": "You get 20 vacation days.",
+    "category": "vacation"
+}
+
+Ya:
+
+{
+    "text": "Medical reimbursement is available.",
+    "category": "reimbursement"
+}
+
+Ye index Qdrant ko category ke basis par fast filtering mein help karta hai.
+
+Simple:
+
+category = filter karne ke liye
+
+
+7. KNOWLEDGE.JSON READ KARNA
+----------------------------
+
+with open("knowledge.json", "r", encoding="utf-8") as f:
+    documents = json.load(f)
+
+knowledge.json mein hamara actual knowledge hai.
+
+Example:
+
+[
+    {
+        "text": "You get 20 vacation days.",
+        "category": "vacation"
+    },
+    {
+        "text": "Medical reimbursement is available.",
+        "category": "reimbursement"
+    }
+]
+
+Python is data ko read karke "documents" mein store kar leta hai.
+
+
+8. EMBEDDING MODEL LOAD
+-----------------------
+
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+Ye model text ko numbers mein convert karta hai.
+
+TEXT
+ ↓
+Embedding Model
+ ↓
+384 numbers
+
+Example:
+
+"vacation days"
+      ↓
+[0.21, -0.12, 0.77, ...]
+
+
+9. TEXT NIKAALNA
+----------------
+
+texts = [document["text"] for document in documents]
+
+Documents ke andar se sirf "text" nikaal rahe hain.
+
+Example:
+
+documents:
+
+[
+    {"text": "You get 20 vacation days.", ...},
+    {"text": "Medical reimbursement is available.", ...}
+]
+
+texts:
+
+[
+    "You get 20 vacation days.",
+    "Medical reimbursement is available."
+]
+
+
+10. EMBEDDINGS BANANA
+--------------------
+
+embeddings = model.encode(texts)
+
+Ab saare texts ko vectors mein convert kar diya.
+
+Example:
+
+"You get 20 vacation days."
+          ↓
+[0.12, 0.43, -0.21, ... 384 numbers]
+
+"Medical reimbursement is available."
+          ↓
+[0.55, -0.11, 0.72, ... 384 numbers]
+
+
+11. QDRANT POINTS BANANA
+-----------------------
+
+points = []
+
+for i in range(len(documents)):
+
+    point = PointStruct(
+        id=i + 1,
+        vector=embeddings[i].tolist(),
+        payload=documents[i]
+    )
+
+    points.append(point)
+
+Qdrant mein har item ko "Point" ke form mein store karte hain.
+
+Ek Point ke andar:
+
+POINT
+ ├── id
+ ├── vector
+ └── payload
+
+
+Example:
+
+id:
+1
+
+vector:
+[0.12, 0.43, -0.21, ...]
+
+payload:
+{
+    "text": "You get 20 vacation days.",
+    "category": "vacation"
+}
+
+
+IMPORTANT:
+
+vector = search ke liye numbers
+
+payload = original information
+
+
+12. QDRANT MEIN DATA UPLOAD
+---------------------------
+
+client.upsert(
+    collection_name=COLLECTION_NAME,
+    points=points
+)
+
+Ab saare points Qdrant mein upload ho gaye.
+
+Qdrant:
+
+knowledge_filter
+    |
+    |-- Point 1
+    |     ├── vector
+    |     └── payload
+    |
+    |-- Point 2
+    |     ├── vector
+    |     └── payload
+    |
+    |-- Point 3
+          ├── vector
+          └── payload
+
+
+13. NORMAL SEARCH FUNCTION
+--------------------------
+
+def search(query, top_k=3):
+
+    query_vector = model.encode(query).tolist()
+
+    results = client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_vector,
+        limit=top_k,
+        with_payload=True,
+    ).points
+
+    return results
+
+
+Suppose user asks:
+
+"How many vacation days do I get?"
+
+
+STEP 1:
+
+query = "How many vacation days do I get?"
+
+
+STEP 2:
+
+query_vector = model.encode(query).tolist()
+
+Question ko embedding mein convert kiya:
+
+Question
+   ↓
+Embedding Model
+   ↓
+384 numbers
+
+
+STEP 3:
+
+Qdrant ko question vector diya.
+
+Qdrant check karega:
+
+"Kaunse stored vectors is question ke sabse similar hain?"
+
+
+STEP 4:
+
+limit=3
+
+Top 3 similar documents lao.
+
+
+STEP 5:
+
+with_payload=True
+
+Result ke saath original document information bhi lao.
+
+
+So normal search:
+
+QUESTION
+   ↓
+EMBEDDING
+   ↓
+VECTOR
+   ↓
+QDRANT
+   ↓
+SIMILAR DOCUMENTS
+   ↓
+TOP 3 RESULTS
+
+
+14. FILTER SEARCH
+-----------------
+
+def search_with_filter(query, query_filter=None, top_k=3):
+
+    query_vector = model.encode(query).tolist()
+
+    results = client.query_points(
+        collection_name=COLLECTION_NAME,
+        query=query_vector,
+        limit=top_k,
+        with_payload=True,
+        query_filter=query_filter,
+    ).points
+
+    return results
+
+
+Ye normal search jaisa hi hai.
+
+ONLY EXTRA THING:
+
+query_filter
+
+
+Matlab:
+
+"Search karte waqt ek condition bhi follow karo."
+
+
+15. FILTER BANANA
+-----------------
+
+reimbursement_filter = Filter(
+    must=[
+        FieldCondition(
+            key="category",
+            match=MatchValue(value="reimbursement")
+        )
+    ]
+)
+
+Iska simple meaning:
+
+category MUST BE reimbursement
+
+
+Example:
+
+Document 1:
+category = vacation
+❌
+
+Document 2:
+category = reimbursement
+✅
+
+Document 3:
+category = salary
+❌
+
+Document 4:
+category = reimbursement
+✅
+
+
+Filter ke baad sirf reimbursement wale documents consider honge.
+
+
+16. FILTER SEARCH CALL
+----------------------
+
+results = search_with_filter(
+    query,
+    reimbursement_filter,
+    top_k=3
+)
+
+Meaning:
+
+Question
+   +
+category = reimbursement
+        ↓
+      Qdrant
+        ↓
+Top 3 matching reimbursement documents
+
+
+IMPORTANT:
+
+Normal search:
+
+Question
+ ↓
+Qdrant
+ ↓
+Similar documents
+
+
+Filtered search:
+
+Question
+ ↓
+Qdrant
+ ↓
+FILTER
+ ↓
+Similar documents
+
+
+17. RESULTS PRINT KARNA
+-----------------------
+
+for result in results:
+    print(f"Score: {result.score:.3f}")
+    print(result.payload["text"])
+
+result.score
+→ document question ke kitna similar hai.
+
+result.payload["text"]
+→ original document ka text.
+
+
+18. GROQ SE CONNECT
+-------------------
+
+groq_client = Groq(
+    api_key=GROQ_API_KEY
+)
+
+Ab Groq LLM se connection bana diya.
+
+
+19. LLM FUNCTION
+----------------
+
+def ask_llm(question, context):
+
+    prompt = f"""
+    Answer the question using only the information provided below.
+
+    Context:
+    {context}
+
+    Question:
+    {question}
+
+    If the answer is not present in the context, say:
+    "I don't know based on the provided information."
+    """
+
+LLM ko do cheezein de rahe hain:
+
+1. Question
+2. Context
+
+
+Example:
+
+Question:
+How many vacation days do I get?
+
+Context:
+You get 20 vacation days.
+
+
+LLM ko instruction:
+
+"Sirf diye gaye context se answer dena.
+Apni taraf se information mat banana."
+
+
+20. GROQ LLM KO REQUEST
+-----------------------
+
+response = groq_client.chat.completions.create(
+    model="openai/gpt-oss-120b",
+    messages=[
+        {
+            "role": "user",
+            "content": prompt
+        }
+    ]
+)
+
+LLM ko prompt bhej diya.
+
+
+21. LLM KA ANSWER NIKAALNA
+--------------------------
+
+return response.choices[0].message.content
+
+LLM ke response mein se actual text answer nikaal rahe hain.
+
+
+22. COMPLETE RAG PIPELINE
+-------------------------
+
+question = "How many vacation days do I get?"
+
+User ka question.
+
+
+STEP 1:
+results = search(question, top_k=3)
+
+Question ko embedding mein convert karo
+aur Qdrant se relevant documents lao.
+
+
+STEP 2:
+
+context = "\n".join(
+    result.payload["text"]
+    for result in results
+)
+
+Search results mein se actual text nikaal lo.
+
+Example:
+
+context =
+"You get 20 vacation days.
+Vacation can be carried forward..."
+
+
+STEP 3:
+
+answer = ask_llm(question, context)
+
+Question + retrieved context
+        ↓
+       LLM
+        ↓
+   Final Answer
+
+
+23. FINAL RAG FLOW
+------------------
+
+                    KNOWLEDGE.JSON
+                          |
+                          ↓
+                       TEXT
+                          |
+                          ↓
+                  EMBEDDING MODEL
+                          |
+                          ↓
+                    384 NUMBERS
+                          |
+                          ↓
+                       QDRANT
+                          |
+                          |
+USER QUESTION ──→ EMBEDDING
+                          |
+                          ↓
+                    QUERY VECTOR
+                          |
+                          ↓
+                       QDRANT
+                          |
+                    ┌─────┴─────┐
+                    ↓           ↓
+                  FILTER     SIMILARITY
+                    ↓           ↓
+                    └─────┬─────┘
+                          ↓
+                    TOP RESULTS
+                          |
+                          ↓
+                    ORIGINAL TEXT
+                          |
+                          ↓
+                       CONTEXT
+                          |
+                          ↓
+                         LLM
+                          |
+                          ↓
+                    FINAL ANSWER
+
+
+24. SABSE IMPORTANT CONCEPTS
+----------------------------
+
+Embedding:
+TEXT → NUMBERS
+
+Vector:
+384 numbers representing the meaning of text.
+
+Qdrant:
+Vectors ko store aur search karta hai.
+
+Payload:
+Original information/metadata.
+
+Similarity Search:
+Question ke meaning ke closest documents dhoondna.
+
+Filter:
+Extra condition lagana.
+
+Example:
+
+category = "reimbursement"
+
+Context:
+Qdrant se mile relevant documents ka text.
+
+LLM:
+Context ko use karke final human-readable answer banata hai.
+
+RAG:
+RETRIEVE → AUGMENT → GENERATE
+
+
+25. EK REAL EXAMPLE
+-------------------
+
+Knowledge:
+
+"You get 20 vacation days."
+category = vacation
+
+"Medical reimbursement is available."
+category = reimbursement
+
+
+User:
+
+"How many vacation days do I get?"
+
+
+Question
+   ↓
+Embedding
+   ↓
+Question Vector
+   ↓
+Qdrant Search
+   ↓
+Relevant document
+   ↓
+"You get 20 vacation days."
+   ↓
+Context
+   ↓
+Groq LLM
+   ↓
+"You get 20 vacation days."
+
+
+THAT IS YOUR ENTIRE RAG SYSTEM.
+
+
+ONE-LINE MEMORY:
+
+"Knowledge ko embeddings mein convert karke Qdrant mein store karo,
+user question ko bhi embedding banao, Qdrant se relevant information
+retrieve karo, aur retrieved information ko LLM ko dekar final answer
+generate karao."

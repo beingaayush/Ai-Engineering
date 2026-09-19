@@ -1,0 +1,69 @@
+Flow:
+
+knowledge.json
+      ↓
+Text ko numbers mein convert karo
+      ↓
+Qdrant mein store karo
+      ↓
+User question ko bhi numbers mein convert karo
+      ↓
+Similar information Qdrant se nikalo
+      ↓
+Woh information Groq LLM ko do
+      ↓
+Answer
+------------------------------------------------------
+
+              KNOWLEDGE.JSON
+                    │
+                    ↓
+                 TEXT
+                    │
+                    ↓
+             EMBEDDING MODEL
+                    │
+                    ↓
+             384 NUMBERS
+                    │
+                    ↓
+                 QDRANT
+                    │
+          ┌─────────┴─────────┐
+          │                   │
+       VECTOR              PAYLOAD
+          │                   │
+    search ke liye       actual text
+                             
+────────────────────────────────────
+
+USER QUESTION
+      │
+      ↓
+Embedding Model
+      │
+      ↓
+Question Vector
+      │
+      ↓
+    QDRANT
+      │
+      ├── Filter?
+      │
+      └── Similarity Search
+              │
+              ↓
+         TOP RESULTS
+              │
+              ↓
+            TEXT
+              │
+              ↓
+            GROQ
+              │
+              ↓
+        FINAL ANSWER
+
+--------------------------------------------------------
+
+
