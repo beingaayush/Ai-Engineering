@@ -1,0 +1,14 @@
+rag-project/
+│
+├── knowledgebase.json
+├── main.py                 # RAG application
+├── retrieval.py            # Document retrieval
+├── evaluation/
+│   ├── dataset.json        # Test questions + ground truth
+│   ├── evaluate.py         # Evaluation metrics
+│   └── results.json        # Evaluation scores
+│
+├── .env
+└── requirements.txt
+
+
