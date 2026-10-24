@@ -1,11 +1,10 @@
-# Ye file embedding model aur Qdrant handle karegi => main.py aur evaluate.py,
-# dono isi file ke retrieval function ko use karenge.
+# Ye file embedding model aur Qdrant handle karti hai.
+# main.py aur evaluate.py, dono yahan ke search() function ko use karenge.
 
 # -------------------------------------------------------------------------
 
 
-# Ye file embedding model aur Qdrant handle karti hai.
-# main.py aur evaluate.py, dono yahan ke search() function ko use karenge.
+
 
 import json
 import os
