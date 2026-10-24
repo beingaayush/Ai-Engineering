@@ -10,5 +10,3 @@ rag-project/
 │
 ├── .env
 └── requirements.txt
-
-
