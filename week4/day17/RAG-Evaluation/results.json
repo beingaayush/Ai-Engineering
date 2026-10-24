@@ -1,0 +1,9 @@
+// Is file ko initially empty evaluation result ke structure ke saath rakho. Evaluation run hone par code isse automatically update karega.
+
+
+{
+  "dataset_size": 0,
+  "metric_averages": {},
+  "test_cases": [],
+  "note": "Results are populated by running python -m evaluation.evaluate"
+}
