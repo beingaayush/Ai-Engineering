@@ -10,3 +10,6 @@ rag-project/
 │
 ├── .env
 └── requirements.txt
+
+
+[ this structure is also followed in this -> week4 day17 ] 
